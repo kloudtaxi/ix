@@ -1,4 +1,4 @@
-DOCKER_COMPOSE=docker-compose.yml
+DOCKER_COMPOSE=docker compose.yml
 DOCKER_REGISTRY=ghcr.io
 
 # check for md5sum or md5 for hashing
@@ -33,9 +33,9 @@ IMAGE_TAG_PSQL=$(shell cat $(HASH_FILES_PSQL) | ${HASHER} | cut -d ' ' -f 1)
 IMAGE_URL_PSQL=$(DOCKER_REPOSITORY_PSQL):$(IMAGE_TAG_PSQL)
 IMAGE_SENTINEL_PSQL=.sentinel/image.psql
 
-DOCKER_COMPOSE_RUN=docker-compose run --rm web
-DOCKER_COMPOSE_RUN_WITH_PORT=docker-compose run -p 8000:8000 --rm web
-DOCKER_COMPOSE_RUN_NODEJS=docker-compose run --rm nodejs
+DOCKER_COMPOSE_RUN=docker compose run --rm web
+DOCKER_COMPOSE_RUN_WITH_PORT=docker compose run -p 8000:8000 --rm web
+DOCKER_COMPOSE_RUN_NODEJS=docker compose run --rm nodejs
 
 
 # set to skip build, primarily used by github workflows to skip builds when image is cached
@@ -161,12 +161,12 @@ compile_relay: nodejs
 .PHONY: db
 db: compose
 	@echo starting IX dev db
-	@if [ -z "$$(docker ps -q -f name=ix_db_vscode)" ]; then docker-compose run --name ix_db_vscode -d -p 5432:5432 db; else echo "Container ix_db_vscode already running."; fi
+	@if [ -z "$$(docker ps -q -f name=ix_db_vscode)" ]; then docker compose run --name ix_db_vscode -d -p 5432:5432 db; else echo "Container ix_db_vscode already running."; fi
 
 .PHONY: redis
 redis: compose
 	@echo starting IX dev redis
-	@if [ -z "$$(docker ps -q -f name=ix_redis_vscode)" ]; then docker-compose run --name ix_redis_vscode -d -p 6379:6379 redis; else echo "Container ix_redis_vscode already running."; fi
+	@if [ -z "$$(docker ps -q -f name=ix_redis_vscode)" ]; then docker compose run --name ix_redis_vscode -d -p 6379:6379 redis; else echo "Container ix_redis_vscode already running."; fi
 
 .PHONY: vscode
 vscode: db redis
@@ -181,7 +181,7 @@ vscode-down: compose
 .PHONY: cluster
 cluster: compose
 	@echo starting IX dev cluster
-	docker-compose up -d web nginx worker
+	docker compose up -d web nginx worker
 
 
 .PHONY: up
@@ -190,7 +190,7 @@ up: cluster
 
 .PHONY: down
 down: compose
-	docker-compose down
+	docker compose down
 
 .PHONY: restart
 restart: compose down up
@@ -198,15 +198,15 @@ restart: compose down up
 .PHONY: restart-worker
 restart-worker: compose
 	@echo restarting worker...
-	@docker-compose up -d --scale worker=0
-	@docker-compose up -d --scale worker=1
+	@docker compose up -d --scale worker=0
+	@docker compose up -d --scale worker=1
 
 
 # run backend and frontend. This starts uvicorn for asgi+websockers
 # and nginx to serve static files
 .PHONY: server
 server: cluster
-	@docker-compose logs -f --tail=10 web nginx
+	@docker compose logs -f --tail=10 web nginx
 
 
 # run django debug server, backup in case nginx ever breaks
@@ -217,21 +217,21 @@ runserver: compose
 # run worker
 .PHONY: worker
 worker: compose
-	@docker-compose logs -f --tail=10 worker
+	@docker compose logs -f --tail=10 worker
 
 # reset worker (for code refresh)
 .PHONY: worker-reset
 worker-reset: compose
 	@echo stopping workers...
-	@docker-compose up -d --scale worker=0
+	@docker compose up -d --scale worker=0
 	@echo restarting worker...
-	@docker-compose up -d --scale worker=1
+	@docker compose up -d --scale worker=1
 
 
 .PHONY: scale
 scale: compose
 	@${N:-1} echo scaling workers to $$N
-	@${N:-1} docker-compose up -d --scale worker=$$N
+	@${N:-1} docker compose up -d --scale worker=$$N
 
 # =========================================================
 # Shells
@@ -264,7 +264,7 @@ migrate: compose
 migrations: compose
 	${DOCKER_COMPOSE_RUN} ./manage.py makemigrations
 
-LOAD_FIXTURE = docker-compose exec -T web ./manage.py loaddata
+LOAD_FIXTURE = docker compose exec -T web ./manage.py loaddata
 
 # load initial data needed for dev environment
 .PHONY: dev_fixtures
@@ -402,7 +402,7 @@ unseal-vault:
 .PHONY: vault-ready
 vault-ready: fix-file-ownership ${VAULT_FILE} vault-empty-env certs
 	@echo "Preparing Vault..."
-	docker-compose up -d vault
+	docker compose up -d vault
 	@# Check if Vault is up and accepting connections, if not, start Vault
 	@# Initialize, unseal and check the status of Vault, this is handled by the script
 	@echo "Checking Vault status..."
@@ -410,7 +410,7 @@ vault-ready: fix-file-ownership ${VAULT_FILE} vault-empty-env certs
 
 
 clean-vault: vault-empty-env fix-file-ownership
-	docker-compose down
+	docker compose down
 	rm -rf ${VAULT_FILE}/*
 	rm -f ${VAULT_UNSEAL_KEYS}
 	rm -f ${VAULT_ENV}

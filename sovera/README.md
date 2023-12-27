@@ -33,6 +33,8 @@
 
 :tipping_hand_man: depending on the version of docker you many need to modify `Makefile` for docker compose to work. **Notice** the removal of hyphen in docker compose command
 
+If your system has Docker Compose V2 installed instead of V1, use `docker compose` instead of `docker-compose`. Check if this is the case by running `$ docker compose version`. 
+
 Example: 
 
 ```makefile
